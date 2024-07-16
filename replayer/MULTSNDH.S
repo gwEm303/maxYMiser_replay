@@ -157,3 +157,6 @@ two_voice:          incbin  example2.myv                    ;example music by gw
 two_song:           incbin  example2.mys
 two_song_end:    
                     even
+                    ifd __VASM
+                    dc.l 0
+                    endif

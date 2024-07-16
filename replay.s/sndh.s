@@ -1,3 +1,13 @@
+; Changes by GGN to enable assembling this source with vasm and still be 1:1 binary compatible with
+; what devpac 3 outputs.
+; Notable changes:
+; - add/sub/and.X #constant,Dn -> addi/subi/andi.X #constant,Dn
+; - lea 0(an),am -> lea (an),am (there are various permuatations of this around the source,
+;                               sometimes it was solved by an ifeq/else/endif block. Lines commented with "ggn"
+;                               are the changes)
+; - A couple of "even" directives added to force alignment as vasm is more strict
+; - Pointer offsets replaced with "RS.X" statements, so binary trim is not needed any more
+
                 opt         CHKPC                   ;make sure PC relative code
                 opt         o+                      ;optimisations on
                 opt         p=68040                 ;we have some 030 and 040 instructions for compatability purposes
@@ -170,7 +180,7 @@ globalvolume:   movem.l     d0-d1/a0,-(sp)
                 move.w      d0,d1
                 lsr.b       #3,d1
                 neg.b       d1
-                add.b       #15,d1
+                addi.b      #15,d1
                 lea         globalvolume(pc),a0
                 add.l       #instrumentstart-globalvolume,a0
                 move.b      d1,94+INSTAOFFSET(a0)
@@ -197,7 +207,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 move.w    #$2700,sr                           ;interrupts off when modifying instruments
 
                 lea       manualplaynote(pc),a0
-                add.l     #trakerdatapoint-manualplaynote,a0
+                add.l     #external_pointers+trakerdatapoint-manualplaynote,a0
                 add.l     (a0),a0
                 addq.l    #8,a0                               ;a0 points to tracker data
 
@@ -241,7 +251,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 beq.s     .setDnote
 .clipDnote      cmpi.b    #68,d0
                 blo.s     .setDnote
-                sub.b     #12,d0
+                subi.b    #12,d0
                 bra.s     .clipDnote
 .setDnote       move.b    d0,(a1)                ; note
                 cmpi.b    #8,d1                  ; maximum sample number
@@ -258,7 +268,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 beq.s    .setEnote
 .clipEnote      cmpi.b    #68,d0
                 blo.s     .setEnote
-                sub.b     #12,d0
+                subi.b    #12,d0
                 bra.s     .clipEnote
 .setEnote       move.b    d0,3(a1)               ; note
                 cmpi.b    #8,d1                  ; maximum sample number
@@ -283,7 +293,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 lsl.w     #6,d1                  ; 64 bytes per inst
 
                 lea       .cont(pc),a6
-                add.l     #voicedatapoint-.cont,a6
+                add.l     #external_pointers+voicedatapoint-.cont,a6
                 add.l     (a6),a6                ; a6 is digi0point
                 lea       40+16(a6),a6           ; +40 takes us to instrumentdata +16 takes us to portamento flag
                 add.l     d1,a6                  ; a0 points to end of inst
@@ -319,7 +329,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
 setnextsongpos: move.l    a0,-(sp)               ; d0.b = song position
 
                 lea       setnextsongpos(pc),a0
-                add.l     #trakerdatapoint-setnextsongpos,a0
+                add.l     #external_pointers+trakerdatapoint-setnextsongpos,a0
                 add.l     (a0),a0
                 addq.l    #8,a0                  ; a0 points to tracker data
 
@@ -336,7 +346,7 @@ playnow:        movem.l     d0-d1/a0-a1,-(sp)
                 clr.b       (a0)                    ;clear demo syncroniser
 
                 lea         playnow(pc),a0          ;lea trakerdatapoint(pc),a0
-                add.l       #trakerdatapoint-playnow,a0
+                add.l       #external_pointers+trakerdatapoint-playnow,a0
                 add.l       (a0),a0
                 addq.l      #8,a0                   ;a0 points to tracker data
 
@@ -409,13 +419,13 @@ playnow:        movem.l     d0-d1/a0-a1,-(sp)
                 move.l      d0,d1                   ; check for special loop pattern
                 cmpi.b      #$00FD,d1
                 beq.s       .nextsongpos
-                and.w       #$FF00,d1
+                andi.w      #$FF00,d1
                 cmpi.w      #$FD00,d1
                 beq.s       .nextsongpos
                 swap        d1
                 cmpi.b      #$00FD,d1
                 beq.s       .nextsongpos
-                and.w       #$FF00,d1
+                andi.w      #$FF00,d1
                 cmpi.w      #$FD00,d1
                 beq.s       .nextsongpos
 
@@ -443,7 +453,7 @@ playnow:        movem.l     d0-d1/a0-a1,-(sp)
 
 stopnow:        movem.l     d0/a0-a2,-(sp)
                 lea         stopnow(pc),a0          ;trakerdatapoint(pc),a0
-                add.l       #trakerdatapoint-stopnow,a0
+                add.l       #external_pointers+trakerdatapoint-stopnow,a0
                 add.l       (a0),a0
                 addq.l      #8,a0                   ;a0 points to tracker data
                 clr.b       25(a0)                  ;clear playing byte
@@ -626,7 +636,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         sidintersA_SMC(pc),a0
                 move.l      a0,d0
                 move.l      a0,d1
-                and.w       #%1111111000000000,d0
+                andi.w      #%1111111000000000,d0
                 sub.l       d0,d1
                 move.l      d0,a3
                 lea         sidinterruptsA(pc),a0               ;setup pointers to system friendly SIDA
@@ -648,7 +658,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         sidintersB_SMC(pc),a0
                 move.l      a0,d0
                 move.l      a0,d1
-                and.w       #%1111111000000000,d0
+                andi.w      #%1111111000000000,d0
                 sub.l       d0,d1
                 move.l      d0,a3
                 lea         sidinterruptsB(pc),a0               ;setup pointers to system friendly SIDA
@@ -671,7 +681,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 add.l       #sidintersD_SMC-.sidDtop020,a0
                 move.l      a0,d0
                 move.l      a0,d1
-                and.w       #%1111111000000000,d0
+                andi.w      #%1111111000000000,d0
                 sub.l       d0,d1
                 move.l      d0,a3
                 lea         .sidDtop020(pc),a0                  ;setup pointers to system friendly SIDC
@@ -1241,7 +1251,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         sidintersA_SMC(pc),a0
                 lea         sidintersA_SMCend(pc),a1
                 move.l      a0,d0
-                and.w       #%1111111000000000,d0
+                andi.w      #%1111111000000000,d0
                 move.l      d0,a2
                 tst.w       (a2)
                 bne.s       .skipsidAcopy
@@ -1260,7 +1270,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         sidintersB_SMC(pc),a0
                 lea         sidintersB_SMCend(pc),a1
                 move.l      a0,d0
-                and.w       #%1111111000000000,d0
+                andi.w      #%1111111000000000,d0
                 move.l      d0,a2
                 tst.w       (a2)
                 bne.s       .skipsidBcopy
@@ -1281,7 +1291,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         .copysidDtop(pc),a1
                 add.l       #sidintersD_SMCend-.copysidDtop,a1
                 move.l      a0,d0
-                and.w       #%1111111000000000,d0
+                andi.w      #%1111111000000000,d0
                 move.l      d0,a2
                 tst.w       (a2)
                 bne.s       .skipsidDcopy
@@ -1627,7 +1637,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 bne.s       .copypwmAtop
 .skippwmAcopy   lea         pwminterruptsA(pc),a0                       ;setup pointers to SMC PWM routines
                 move.l      d0,(a0)+
-                add.l       #pwminterA_SMC2-pwminterA_SMC1,d0
+                addi.l      #pwminterA_SMC2-pwminterA_SMC1,d0
                 move.l      d0,(a0)
                 move.l      d0,a1
                 move.w      2(a0),28-34(a1)                             ; new vector address in SMC1
@@ -1646,7 +1656,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 bne.s       .copypwmBtop
 .skippwmBcopy   lea         pwminterruptsB(pc),a0
                 move.l      d0,(a0)+
-                add.l       #pwminterB_SMC2-pwminterB_SMC1,d0
+                addi.l      #pwminterB_SMC2-pwminterB_SMC1,d0
                 move.l      d0,(a0)
                 move.l      d0,a1
                 move.w      2(a0),28-34(a1)                             ; new vector address in SMC1
@@ -1669,7 +1679,7 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 add.l       #pwminterruptsD-.skippwmDcopy,a0
                 move.l      d0,a1
                 move.l      a1,(a0)+
-                add.l       #pwminterD_SMC2-pwminterD_SMC1,d0
+                addi.l      #pwminterD_SMC2-pwminterD_SMC1,d0
                 move.l      d0,(a0)
                 move.l      d0,a1
                 move.w      2(a0),28-34(a1)                             ; new vector address in SMC1
@@ -1747,7 +1757,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
 
 ;.....
 .st             lea         .st(pc),a3                          ; voicedatapoint(pc),a3
-                add.l       #voicedatapoint-.st,a3
+                add.l       #external_pointers+voicedatapoint-.st,a3
                 add.l       (a3),a3                             ; a3 is digi0point
                 move.l      a3,a2
                 IFEQ        BUILD_BIN
@@ -1892,7 +1902,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
 
                 lea         preshiftedsamp(pc),a1               ;a1 points to array of sample pointers
                 lea         .mallocend(pc),a3                   ;voicedatapoint(pc),a3
-                add.l       #voicedatapoint-.mallocend,a3
+                add.l       #external_pointers+voicedatapoint-.mallocend,a3
                 add.l       (a3),a3                             ;a3 is digi0point
                 move.l      a3,a2
                 IFEQ        BUILD_BIN
@@ -1923,7 +1933,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
                 subq.b      #1,d2
                 bmi.s       .nativeendpoint                     ;remaining volume levels
 .nextvolume     lea         .nextvolume(pc),a2                  ;voicedatapoint(pc),a2
-                add.l       #voicedatapoint-.nextvolume,a2
+                add.l       #external_pointers+voicedatapoint-.nextvolume,a2
                 add.l       (a2),a2                             ;a2 is digi0point
                 IFEQ        BUILD_BIN
                 add.l       #digiparams-digi0point,a2           ; a2 points to digiparams
@@ -1967,7 +1977,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
                 ;move.l     #124000,d0          ; malloc space for generated routines (space needed measured in debugger = 123798) <- ste native
                 cmpi.b      #2,49(a0)           ; test stedmasound
                 bne.s       .mallocsgc          ; if one dma channel only, then malloc less space for generated mixing routines
-                add.l       #80500,d0
+                addi.l      #80500,d0
 
 .mallocsgc      movem.l     d1-d2/a0-a2,-(sp)                       ; malloc space for resample and remix dma routines at once
                 move.l      d0,-(sp)
@@ -1976,8 +1986,8 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
                 addq.l      #6,sp
                 movem.l     (sp)+,d1-d2/a0-a2
                 move.l      d0,a2                                   ; d0 = buffer start - assume malloc works :)
-                add.l       #80500,d0
-                ;add.l      #124000,d0
+                addi.l      #80500,d0
+                ;addi.l     #124000,d0
                 move.l      d0,(resammixpoints-resamplepoints)(a1)  ; store pointer to remixing routine ready
 
                 lea         dma_freq_tab(pc),a4
@@ -2131,7 +2141,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
                 move.l      #249000,d0
                 cmpi.b      #2,49(a0)
                 bne.s       .mallocsgcfalc
-                add.l       #161500,d0
+                addi.l      #161500,d0
 
 .mallocsgcfalc  movem.l     d1-d2/a0-a2,-(sp)
                 move.l      d0,-(sp)            ; malloc space for generated routines (space needed measured in debugger = 248502) <- ste native
@@ -2140,7 +2150,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
                 addq.l      #6,sp
                 movem.l     (sp)+,d1-d2/a0-a2
                 move.l      d0,a2                                   ; d0 = buffer start - assume malloc works :)
-                add.l       #161500,d0
+                addi.l      #161500,d0
                 move.l      d0,(resammixpoints-resamplepoints)(a1)  ; store pointer to remix routines
 
                 lea         dma_freq_tab(pc),a4
@@ -3100,7 +3110,7 @@ restoretimerD:  rts
 replayrout:     movem.l     d0-a6,-(sp)
 
                 lea         replayrout(pc),a0               ; lea trakerdatapoint(pc),a0
-                add.l       #trakerdatapoint-replayrout,a0
+                add.l       #external_pointers+trakerdatapoint-replayrout,a0
                 add.l       (a0),a0                         ; a0 points to tracker data
                 addq.l      #8,a0
                 tst.b       25(a0)                          ; test playing byte
@@ -3200,7 +3210,7 @@ replayrout:     movem.l     d0-a6,-(sp)
                 add.l       #YMtemp-.setupym,a1
                 ;       a2 is temp instrument pointer
                 lea         .setupym(pc),a3                 ; lea voicedatapoint(pc),a3
-                add.l       #voicedatapoint-.setupym,a3
+                add.l       #external_pointers+voicedatapoint-.setupym,a3
                 add.l       (a3),a3
                 IFEQ    BUILD_BIN
                 lea         sequencedata-digi0point(a3),a3
@@ -3217,7 +3227,8 @@ replayrout:     movem.l     d0-a6,-(sp)
 
 ; ...................
 ; caclulate sequences
-                lea         INSTAOFFSET(a4),a2
+;                lea         INSTAOFFSET(a4),a2
+                lea         (a4),a2                         ; ggn
                 bsr         dosequences
                 lea         INSTBOFFSET(a4),a2
                 bsr         dosequences
@@ -3229,7 +3240,8 @@ replayrout:     movem.l     d0-a6,-(sp)
                 ;a2 points to instrument
                 ;d0 holds return value
                 moveq       #0,d0
-                lea.l       INSTAOFFSET(a4),a2
+;                lea.l       INSTAOFFSET(a4),a2
+                lea.l       (a4),a2                         ; ggn
                 bsr         getchvol
 .setvolA        move.b      d0,32+2(a1)                     ;(8*4)+2
 
@@ -3311,7 +3323,8 @@ replayrout:     movem.l     d0-a6,-(sp)
                 bra.s       .setnoisefreq
 .noisefB        lea         INSTBOFFSET(a4),a2
                 bra.s       .setnoisefreq
-.noisefA        lea         INSTAOFFSET(a4),a2
+;.noisefA        lea         INSTAOFFSET(a4),a2
+.noisefA        lea         (a4),a2                         ; ggn
 
 .setnoisefreq   moveq       #0,d0
                 move.w      80(a2),d0                       ;precalculated noise freq
@@ -3355,7 +3368,8 @@ replayrout:     movem.l     d0-a6,-(sp)
                 bra.s       .foundbuzzercom
 
 .foundbuzzerA   move.w      #1,52(a1)
-                lea         INSTAOFFSET(a4),a2
+;                lea         INSTAOFFSET(a4),a2             ; ggn
+                lea         (a4),a2
                 ;bra.s      .foundbuzzercom
 
 .foundbuzzercom bsr         getbuzzfreq                     ; set buzzer frequency
@@ -3374,7 +3388,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 btst        #\1,28+2(a1)                    ;square wave used?
                 bne.s       .endchfreq
 
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l       \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         getsqufreq
                 move.b      d3,0+2+\1*8(a1)                 ; LSB
                 move.w      d3,4+2+\1*8(a1)                 ; MSB (store full 12 bits in YM buffer to make it easier for FM routine to access it)
@@ -3542,7 +3560,12 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 IFNE    SID_\7
 .yessid         ;get YM frequency resister value for timer
                 ;use actual YM value for now
+
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l       \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 holds timer frequency
 
                 ;lookup MFP divider
@@ -3607,7 +3630,7 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 
                 lea         sidinters\7_SMC(pc),a2
                 move.l      a2,d4
-                and.w       #%1111111000000000,d4
+                andi.w      #%1111111000000000,d4
                 move.l      d4,a2
                 lea         sidinterrupts\7+4+2(pc),a6
                 subq.b      #1,d5
@@ -3659,7 +3682,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 ;................
                 IFNE    SYNCSQUARE_\7
 .yessyncsqu     ;get YM frequency register value for timer
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l       \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 timer frequency
 
                 moveq       #0,d6
@@ -3803,7 +3830,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l        \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 holds timer frequency
 
                 lea         timer_div_tab(pc),a2
@@ -3907,7 +3938,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 ;................
                 IFNE    FM_\7
 .yesfm          ;get YM frequency register value for timer
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l        \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 holds timer frequency
 
                 lea         timer_div_tab(pc),a2
@@ -4040,7 +4075,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l       \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 holds timer frequency
                 addq.w      #8,d3                           ;quantise timer frequency to buzzer resolution, including rounding
                 andi.w      #%111111111110000,d3            ;this improves the audio quality of the effect
@@ -4166,7 +4205,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l       \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 holds timer frequency
                 lea         timer_div_tab(pc),a2
 
@@ -4284,7 +4327,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 IFNE    PWM_\7
 .yespwm         ;get YM frequency resister value for timer
                 ;use actual YM value for now
+                ifeq \1                                     ; ggn
+                lea.l       (a4),a2                         ; ggn
+                else                                        ; ggn
                 lea.l       \1*128(a4),a2
+                endc                                        ; ggn
                 bsr         gettimfreq                      ;d3 holds timer frequency
                 sub.w       pulsewidth_tune(pc),d3          ;$5943 = subq.w #4,d3     $5543 = subq.w #2,d3
                 move.w      d3,d0                           ;d0 holds timer frequency
@@ -4639,7 +4686,8 @@ set_chan_D:     setupYMchan_MAC     2,4,$FFFFFA15.w,$110.w,$FFFFFA1D.w,$FFFFFA25
 
 ; ..............................
 ; update portamento, PWM and slide accumulators
-                lea         INSTAOFFSET(a4),a2                      ;A
+;                lea         INSTAOFFSET(a4),a2                      ;A
+                lea         (a4),a2                                 ;A (ggn)
                 bsr         adjportslidacc
 
                 lea.l       INSTBOFFSET(a4),a2                      ;B
@@ -4768,7 +4816,7 @@ stedma_1:       move.b      8+INSTDOFFSET(a4),d1                    ;playing byt
                 subq.b      #1,d0
 
                 lea         .dmastart(pc),a6
-                add.l       #voicedatapoint-.dmastart,a6
+                add.l       #external_pointers+voicedatapoint-.dmastart,a6
                 add.l       (a6),a6
                 move.l      a6,a2
                 lsl.w       #2,d0
@@ -4821,7 +4869,7 @@ stedma_1:       move.b      8+INSTDOFFSET(a4),d1                    ;playing byt
                 blo.s       .note1notclip
                 move.b      #67,d6
                 ENDC
-.note1notclip   sub.w       #24,d6
+.note1notclip   subi.w      #24,d6
                 blt.s       .yessampleend                           ;if note below range
 
                 add.w       d6,d6
@@ -4905,7 +4953,7 @@ stedma_2:       cmpi.b      #2,49(a0)                               ; test stedm
                 subq.b      #1,d0
 
                 lea         .dmastart(pc),a6
-                add.l       #voicedatapoint-.dmastart,a6
+                add.l       #external_pointers+voicedatapoint-.dmastart,a6
                 add.l       (a6),a6
                 move.l      a6,a2
                 lsl.w       #2,d0
@@ -4955,7 +5003,7 @@ stedma_2:       cmpi.b      #2,49(a0)                               ; test stedm
                 blo.s       .note2notclip
                 move.b      #67,d6
                 ENDC
-.note2notclip   sub.w       #24,d6
+.note2notclip   subi.w      #24,d6
                 blt.s       .yessampleend                           ;if note below range
 
                 add.w       d6,d6
@@ -5062,13 +5110,13 @@ dmamidiout_end:
 .live           move.l      d0,d1                                    ; check for special loop pattern
                 cmpi.b      #$00FD,d1
                 beq.s       .foundloop
-                and.w       #$FF00,d1
+                andi.w      #$FF00,d1
                 cmpi.w      #$FD00,d1
                 beq.s       .foundloop
                 swap        d1
                 cmpi.b      #$00FD,d1
                 beq.s       .foundloop
-                and.w       #$FF00,d1
+                andi.w      #$FF00,d1
                 cmpi.w      #$FD00,d1
                 beq.s       .foundloop
 
@@ -5127,7 +5175,7 @@ gen_patterntab: movem.l     d0/a0-a2,-(sp)                          ; a0 already
                 move.l      a0,a2
                 subq.l      #8,a2
                 lea         gen_patterntab(pc),a1
-                add.l       #trakerdatalen-gen_patterntab,a1
+                add.l       #external_pointers+trakerdatalen-gen_patterntab,a1
                 add.l       (a1),a2                                 ;a2 points to pattern data end
                 ENDC
 
@@ -5137,7 +5185,7 @@ gen_patterntab: movem.l     d0/a0-a2,-(sp)                          ; a0 already
 
                 IFEQ    BUILD_BIN
                 lea         gen_patterntab(pc),a2
-                add.l       #voicedatapoint-gen_patterntab,a2       ; a2 points to voicedata
+                add.l       #external_pointers+voicedatapoint-gen_patterntab,a2       ; a2 points to voicedata
                 add.l       (a2),a2                                 ; a2 points to digi0 pointer
                 move.l      #"EDIT",d0                              ; if the editor is running, there might be an offset to the start of digi0
                 cmp.l       editortag(pc),d0
@@ -5231,7 +5279,7 @@ parsetracker:   lea         parsetracker(pc),a2             ; a2 points to patte
                 subq.w      #1,d1
                 lsl.w       #6,d1                       ;64 bytes per inst
                 lea         .instyesset(pc),a3
-                add.l       #voicedatapoint-.instyesset,a3
+                add.l       #external_pointers+voicedatapoint-.instyesset,a3
                 add.l       (a3),a3
                 lea         56(a3),a3                   ;a3 points to instrument data, skipping names
                 add.l       d1,a3
@@ -5582,8 +5630,8 @@ parsefxcolumn:  moveq       #0,d0                       ;a5         points to fx
                 bhs.s       .UwirePanRSTe
 .UwirePanLSTe   move.w      #%10101010100,d0                ; left vol max
                 bsr         set_LMC1992
-                sub.w       #$D0,d1
-                add.w       #20,d1
+                subi.w      #$D0,d1
+                addi.w      #20,d1
                 move.w      d1,d0
                 andi.w      #%00000111111,d0
                 ori.w       #%10100000000,d0
@@ -5591,9 +5639,9 @@ parsefxcolumn:  moveq       #0,d0                       ;a5         points to fx
                 bra.s       .UwireEnd
 .UwirePanRSTe   move.w      #%10100010100,d0                ; right vol max
                 bsr         set_LMC1992
-                sub.w       #$D0,d1
+                subi.w      #$D0,d1
                 neg.w       d1
-                add.w       #20,d1
+                addi.w      #20,d1
                 move.w      d1,d0
                 andi.w      #%00000111111,d0
                 ori.w       #%10101000000,d0
@@ -5608,7 +5656,7 @@ parsefxcolumn:  moveq       #0,d0                       ;a5         points to fx
                 cmpi.b      #$A0,d0
                 bhi.s       .UwirePanFalc
 
-.UwireMvolFalc  sub.w       #$a0,d0                        ; master vol $80 -> $A0
+.UwireMvolFalc  subi.w      #$a0,d0                        ; master vol $80 -> $A0
                 neg.w       d0                        ; d0 has LUT offset
                 move.b      d0,(a5)
                 bsr         fake_LMC1992
@@ -5621,13 +5669,13 @@ parsefxcolumn:  moveq       #0,d0                       ;a5         points to fx
                 cmpi.b      #$D0,d0                        ; pan position $C0 -> $D0 -> $E0
                 bhs.s       .UwirePanRFalc
 .UwirePanLFalc  clr.b       1(a5)                        ; left vol max
-                sub.w       #$D0,d0
+                subi.w      #$D0,d0
                 neg.w       d0
                 move.b      d0,2(a5)                ; set right vol
                 bsr         fake_LMC1992
                 bra.s       .UwireEnd
 .UwirePanRFalc  clr.b       2(a5)                        ; right vol max
-                sub.w       #$D0,d0
+                subi.w      #$D0,d0
                 move.b      d0,1(a5)                ; set left vol
                 bsr         fake_LMC1992
                 ;bra.s      .UwireEnd
@@ -5814,7 +5862,7 @@ parsetrackste:  lea         parsetrackste(pc),a2            ; a2 points to patte
                 beq.s       .note1notclip                        ; don't clip on midi mode
 .note1yesclip   cmpi.b      #68,d0
                 blo.s       .note1notclip
-                sub.b       #12,d0
+                subi.b      #12,d0
                 bra.s       .note1yesclip
 .note1notclip   move.b      d0,(a4)                                ; store note
                 clr.b       8(a4)                                ; not playing
@@ -5856,7 +5904,7 @@ parsetrackste:  lea         parsetrackste(pc),a2            ; a2 points to patte
                 beq.s       .note2notclip                        ; don't clip on midi mode
 .note2yesclip   cmpi.b      #68,d0
                 blo.s       .note2notclip
-                sub.b       #12,d0
+                subi.b      #12,d0
                 bra.s       .note2yesclip
 .note2notclip   move.b      d0,3(a4)                        ; store note
                 clr.b       9(a4)                                ; not playing
@@ -5899,7 +5947,7 @@ getchvol:       ;check buzzer mixer value and if instrument is set up
                 and.w       #$FF0F,78(a2)                       ;clear inaudible buzzer from mixer
                 rts
 
-.notzero        and.w       #$00F0,d1
+.notzero        andi.w      #$00F0,d1
                 beq.s       .end
                 moveq       #%00010000,d0                       ;enable buzzer
 .end            rts
@@ -6756,7 +6804,7 @@ digiinvolA_SMC: move.l      d0,-(sp)
                 move.b      #$8,$FFFF8800.w                         ;select volume channel A
                 move.b      $DEAFFADE,d0
                 bmi.s       .reachedend
-                add.b       #$F,d0                                  ;SMC volume
+                addi.b      #$F,d0                                  ;SMC volume
                 move.b      digivolscaleA(pc,d0.w),$FFFF8802.w      ;write volume
 .nextvalue      addq.l      #1,$BA55CAFE
                 move.l      (sp)+,d0
@@ -6768,6 +6816,7 @@ digiinvolA_SMC: move.l      d0,-(sp)
 
 digivolscaleA:  dc.b        $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
                 dc.b        $0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$a,$b,$c,$d,$e,$f
+                even                                                ;ggn
                 ENDC
 
 
@@ -7086,7 +7135,7 @@ digiinvolB_SMC: move.l      d0,-(sp)
                 move.b      #$9,$FFFF8800.w                                ;select volume channel B
                 move.b      $DEAFFADE,d0
                 bmi.s       .reachedend
-                add.b       #$F,d0
+                addi.b      #$F,d0
                 move.b      digivolscaleB(pc,d0.w),$FFFF8802.w        ;write volume
 .nextvalue      addq.l      #1,$BA55CAFE
                 move.l      (sp)+,d0
@@ -7098,6 +7147,7 @@ digiinvolB_SMC: move.l      d0,-(sp)
 
 digivolscaleB:  dc.b        $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
                 dc.b        $0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$a,$b,$c,$d,$e,$f
+                even                                                    ;ggn
                 ENDC
 
 
@@ -7415,7 +7465,7 @@ digiinvolD_SMC: move.l      d0,-(sp)
                 move.b      #$A,$FFFF8800.w                     ;select volume channel C
                 move.b      $DEAFFADE,d0
                 bmi.s       .reachedend
-                add.b       #$F,d0
+                addi.b      #$F,d0
                 move.b      digivolscaleD(pc,d0.w),$FFFF8802.w  ;write volume
 .nextvalue      addq.l      #1,$BA55CAFE
                 move.l      (sp)+,d0
@@ -7749,9 +7799,14 @@ stopclearend:
 
 ;..................................................................................
 ; pointers to voice and song data used by replay rout
-voicedatapoint: dc.b        "TRIM"              ; not recalculated on SNDH save
-trakerdatapoint dc.b        "TRIM"              ; recalculated on SNDH save
+external_pointers:
+                rsreset
+;voicedatapoint: dc.b        "TRIM"              ; not recalculated on SNDH save
+voicedatapoint: rs.l 1                           ; ggn
+;trakerdatapoint dc.b        "TRIM"              ; recalculated on SNDH save
+trakerdatapoint:rs.l 1                           ; ggn
 
                 IFNE    BUILD_BIN
-trakerdatalen:  dc.b        "TRIM"              ;only required by pattern pointer calculation
+;trakerdatalen:  dc.b        "TRIM"              ;only required by pattern pointer calculation
+trakerdatalen:  rs.l  1                          ; ggn
                 ENDC
