@@ -1,13 +1,3 @@
-; Changes by GGN to enable assembling this source with vasm and still be 1:1 binary compatible with
-; what devpac 3 outputs.
-; Notable changes:
-; - add/sub/and.X #constant,Dn -> addi/subi/andi.X #constant,Dn
-; - lea 0(an),am -> lea (an),am (there are various permuatations of this around the source,
-;                               sometimes it was solved by an ifeq/else/endif block. Lines commented with "ggn"
-;                               are the changes)
-; - A couple of "even" directives added to force alignment as vasm is more strict
-; - Pointer offsets replaced with "RS.X" statements, so binary trim is not needed any more
-
                 opt         CHKPC                   ;make sure PC relative code
                 opt         o+                      ;optimisations on
                 opt         p=68040                 ;we have some 030 and 040 instructions for compatability purposes
@@ -3227,8 +3217,7 @@ replayrout:     movem.l     d0-a6,-(sp)
 
 ; ...................
 ; caclulate sequences
-;                lea         INSTAOFFSET(a4),a2
-                lea         (a4),a2                         ; ggn
+                lea         (a4),a2                         ; INSTAOFFSET(a4),a2
                 bsr         dosequences
                 lea         INSTBOFFSET(a4),a2
                 bsr         dosequences
@@ -3240,8 +3229,7 @@ replayrout:     movem.l     d0-a6,-(sp)
                 ;a2 points to instrument
                 ;d0 holds return value
                 moveq       #0,d0
-;                lea.l       INSTAOFFSET(a4),a2
-                lea.l       (a4),a2                         ; ggn
+                lea.l       (a4),a2                         ; INSTAOFFSET(a4),a2
                 bsr         getchvol
 .setvolA        move.b      d0,32+2(a1)                     ;(8*4)+2
 
@@ -3323,8 +3311,7 @@ replayrout:     movem.l     d0-a6,-(sp)
                 bra.s       .setnoisefreq
 .noisefB        lea         INSTBOFFSET(a4),a2
                 bra.s       .setnoisefreq
-;.noisefA        lea         INSTAOFFSET(a4),a2
-.noisefA        lea         (a4),a2                         ; ggn
+.noisefA        lea         (a4),a2                         ; INSTAOFFSET(a4),a2
 
 .setnoisefreq   moveq       #0,d0
                 move.w      80(a2),d0                       ;precalculated noise freq
@@ -3368,8 +3355,7 @@ replayrout:     movem.l     d0-a6,-(sp)
                 bra.s       .foundbuzzercom
 
 .foundbuzzerA   move.w      #1,52(a1)
-;                lea         INSTAOFFSET(a4),a2             ; ggn
-                lea         (a4),a2
+                lea         (a4),a2                         ; INSTAOFFSET(a4),a2
                 ;bra.s      .foundbuzzercom
 
 .foundbuzzercom bsr         getbuzzfreq                     ; set buzzer frequency
@@ -3388,11 +3374,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 btst        #\1,28+2(a1)                    ;square wave used?
                 bne.s       .endchfreq
 
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offser
+                lea.l       (a4),a2
+                else
                 lea.l       \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         getsqufreq
                 move.b      d3,0+2+\1*8(a1)                 ; LSB
                 move.w      d3,4+2+\1*8(a1)                 ; MSB (store full 12 bits in YM buffer to make it easier for FM routine to access it)
@@ -3561,11 +3547,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 .yessid         ;get YM frequency resister value for timer
                 ;use actual YM value for now
 
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offser
+                lea.l       (a4),a2
+                else
                 lea.l       \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 holds timer frequency
 
                 ;lookup MFP divider
@@ -3682,11 +3668,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 ;................
                 IFNE    SYNCSQUARE_\7
 .yessyncsqu     ;get YM frequency register value for timer
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offset
+                lea.l       (a4),a2
+                else
                 lea.l       \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 timer frequency
 
                 moveq       #0,d6
@@ -3830,11 +3816,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offser
+                lea.l       (a4),a2
+                else
                 lea.l        \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 holds timer frequency
 
                 lea         timer_div_tab(pc),a2
@@ -3938,11 +3924,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 ;................
                 IFNE    FM_\7
 .yesfm          ;get YM frequency register value for timer
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offser
+                lea.l       (a4),a2
+                else
                 lea.l        \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 holds timer frequency
 
                 lea         timer_div_tab(pc),a2
@@ -4075,11 +4061,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offset
+                lea.l       (a4),a2
+                else
                 lea.l       \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 holds timer frequency
                 addq.w      #8,d3                           ;quantise timer frequency to buzzer resolution, including rounding
                 andi.w      #%111111111110000,d3            ;this improves the audio quality of the effect
@@ -4205,11 +4191,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assmbler warning for zero offset
+                lea.l       (a4),a2
+                else
                 lea.l       \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 holds timer frequency
                 lea         timer_div_tab(pc),a2
 
@@ -4327,11 +4313,11 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 IFNE    PWM_\7
 .yespwm         ;get YM frequency resister value for timer
                 ;use actual YM value for now
-                ifeq \1                                     ; ggn
-                lea.l       (a4),a2                         ; ggn
-                else                                        ; ggn
+                ifeq \1                                     ; avoids assembler warning for zero offset
+                lea.l       (a4),a2
+                else
                 lea.l       \1*128(a4),a2
-                endc                                        ; ggn
+                endc
                 bsr         gettimfreq                      ;d3 holds timer frequency
                 sub.w       pulsewidth_tune(pc),d3          ;$5943 = subq.w #4,d3     $5543 = subq.w #2,d3
                 move.w      d3,d0                           ;d0 holds timer frequency
@@ -4686,8 +4672,7 @@ set_chan_D:     setupYMchan_MAC     2,4,$FFFFFA15.w,$110.w,$FFFFFA1D.w,$FFFFFA25
 
 ; ..............................
 ; update portamento, PWM and slide accumulators
-;                lea         INSTAOFFSET(a4),a2                      ;A
-                lea         (a4),a2                                 ;A (ggn)
+                lea         (a4),a2                                 ;A INSTAOFFSET(a4),a2
                 bsr         adjportslidacc
 
                 lea.l       INSTBOFFSET(a4),a2                      ;B
@@ -6816,7 +6801,7 @@ digiinvolA_SMC: move.l      d0,-(sp)
 
 digivolscaleA:  dc.b        $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
                 dc.b        $0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$a,$b,$c,$d,$e,$f
-                even                                                ;ggn
+                even
                 ENDC
 
 
@@ -7147,7 +7132,7 @@ digiinvolB_SMC: move.l      d0,-(sp)
 
 digivolscaleB:  dc.b        $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$0
                 dc.b        $0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$a,$b,$c,$d,$e,$f
-                even                                                    ;ggn
+                even
                 ENDC
 
 
