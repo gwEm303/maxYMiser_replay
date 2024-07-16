@@ -10,7 +10,7 @@ if command -v vasm >&2; then
         newfsize=$(expr $(stat -f '%z' ./replayer/MYM_REPL.PRG) - 12)    
         dd if=./replayer/MYM_REPL.PRG of=./replayer/MYM_REPL.BIN bs=1 count=$newfsize
     else
-        head -c -12 /replayer/MYM_REPL.PRG > ./replayer/MYM_REPL.BIN
+        head -c -12 ./replayer/MYM_REPL.PRG > ./replayer/MYM_REPL.BIN
     fi
     rm replayer/MYM_REPL.PRG
 
