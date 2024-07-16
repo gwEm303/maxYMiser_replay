@@ -1,12 +1,10 @@
-/Users/gareth/crosstos/dist/devpac/m68k-atari-tos-devpac-gen ./replay.s/stubrepl.s
-dd if=./replay.s/stubrepl.PRG of=./replay.s/stubrepl.BIN bs=1 skip=28
-newfsize=$(expr $(stat -f '%z' ./replay.s/stubrepl.BIN) - 16)
-dd if=./replay.s/stubrepl.BIN of=./replay.s/MYM_REPL.BIN bs=1 count=$newfsize
-rm ./replay.s/stubrepl.BIN ./replay.s/stubrepl.PRG
-mv ./replay.s/MYM_REPL.BIN ./replayer/
+#assumes that crosstos/dist/devpac is in your $PATH
+
+m68k-atari-tos-devpac-gen ./replay.s/stubrepl.s
+tail -c +29 ./replay.s/stubrepl.PRG | head -c -16 > ./replayer/MYM_REPL.BIN
+rm ./replay.s/stubrepl.PRG
 
 cd ./replayer/
-rm ./MULTSNDH.SND
-/Users/gareth/crosstos/dist/devpac/m68k-atari-tos-devpac-gen ./MULTSNDH.S
-dd if=MULTSNDH.PRG of=MULTSNDH.SND bs=1 skip=28
+m68k-atari-tos-devpac-gen ./MULTSNDH.S
+cat MULTSNDH.PRG | tail -c +29 > MULTSNDH.SND
 rm MULTSNDH.PRG
