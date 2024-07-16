@@ -145,15 +145,15 @@ songdataoffset:     ds.l    1
 songdatalength:     ds.l    1
 
 
-one_voice:          incbin  example1.myv                    ;example music by Dma-Sc
+one_voice:          incbin  EXAMPLE1.MYV                    ;example music by Dma-Sc
                     even
-one_song:           incbin  example1.mys
+one_song:           incbin  EXAMPLE1.MYS
 one_song_end:    
                     even
 
 
-two_voice:          incbin  example2.myv                    ;example music by gwEm
+two_voice:          incbin  EXAMPLE2.MYV                    ;example music by gwEm
                     even
-two_song:           incbin  example2.mys
+two_song:           incbin  EXAMPLE2.MYS
 two_song_end:    
                     even

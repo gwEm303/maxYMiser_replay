@@ -207,7 +207,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 move.w    #$2700,sr                           ;interrupts off when modifying instruments
 
                 lea       manualplaynote(pc),a0
-                add.l     #external_pointers+trakerdatapoint-manualplaynote,a0
+                add.l     #trakerdatapoint-manualplaynote,a0
                 add.l     (a0),a0
                 addq.l    #8,a0                               ;a0 points to tracker data
 
@@ -293,7 +293,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 lsl.w     #6,d1                  ; 64 bytes per inst
 
                 lea       .cont(pc),a6
-                add.l     #external_pointers+voicedatapoint-.cont,a6
+                add.l     #voicedatapoint-.cont,a6
                 add.l     (a6),a6                ; a6 is digi0point
                 lea       40+16(a6),a6           ; +40 takes us to instrumentdata +16 takes us to portamento flag
                 add.l     d1,a6                  ; a0 points to end of inst
@@ -329,7 +329,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
 setnextsongpos: move.l    a0,-(sp)               ; d0.b = song position
 
                 lea       setnextsongpos(pc),a0
-                add.l     #external_pointers+trakerdatapoint-setnextsongpos,a0
+                add.l     #trakerdatapoint-setnextsongpos,a0
                 add.l     (a0),a0
                 addq.l    #8,a0                  ; a0 points to tracker data
 
@@ -346,7 +346,7 @@ playnow:        movem.l     d0-d1/a0-a1,-(sp)
                 clr.b       (a0)                    ;clear demo syncroniser
 
                 lea         playnow(pc),a0          ;lea trakerdatapoint(pc),a0
-                add.l       #external_pointers+trakerdatapoint-playnow,a0
+                add.l       #trakerdatapoint-playnow,a0
                 add.l       (a0),a0
                 addq.l      #8,a0                   ;a0 points to tracker data
 
@@ -453,7 +453,7 @@ playnow:        movem.l     d0-d1/a0-a1,-(sp)
 
 stopnow:        movem.l     d0/a0-a2,-(sp)
                 lea         stopnow(pc),a0          ;trakerdatapoint(pc),a0
-                add.l       #external_pointers+trakerdatapoint-stopnow,a0
+                add.l       #trakerdatapoint-stopnow,a0
                 add.l       (a0),a0
                 addq.l      #8,a0                   ;a0 points to tracker data
                 clr.b       25(a0)                  ;clear playing byte
@@ -1757,7 +1757,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
 
 ;.....
 .st             lea         .st(pc),a3                          ; voicedatapoint(pc),a3
-                add.l       #external_pointers+voicedatapoint-.st,a3
+                add.l       #voicedatapoint-.st,a3
                 add.l       (a3),a3                             ; a3 is digi0point
                 move.l      a3,a2
                 IFEQ        BUILD_BIN
@@ -1902,7 +1902,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
 
                 lea         preshiftedsamp(pc),a1               ;a1 points to array of sample pointers
                 lea         .mallocend(pc),a3                   ;voicedatapoint(pc),a3
-                add.l       #external_pointers+voicedatapoint-.mallocend,a3
+                add.l       #voicedatapoint-.mallocend,a3
                 add.l       (a3),a3                             ;a3 is digi0point
                 move.l      a3,a2
                 IFEQ        BUILD_BIN
@@ -1933,7 +1933,7 @@ setup_dma:      movem.l     d0-d7/a1-a6,-(sp)
                 subq.b      #1,d2
                 bmi.s       .nativeendpoint                     ;remaining volume levels
 .nextvolume     lea         .nextvolume(pc),a2                  ;voicedatapoint(pc),a2
-                add.l       #external_pointers+voicedatapoint-.nextvolume,a2
+                add.l       #voicedatapoint-.nextvolume,a2
                 add.l       (a2),a2                             ;a2 is digi0point
                 IFEQ        BUILD_BIN
                 add.l       #digiparams-digi0point,a2           ; a2 points to digiparams
@@ -3110,7 +3110,7 @@ restoretimerD:  rts
 replayrout:     movem.l     d0-a6,-(sp)
 
                 lea         replayrout(pc),a0               ; lea trakerdatapoint(pc),a0
-                add.l       #external_pointers+trakerdatapoint-replayrout,a0
+                add.l       #trakerdatapoint-replayrout,a0
                 add.l       (a0),a0                         ; a0 points to tracker data
                 addq.l      #8,a0
                 tst.b       25(a0)                          ; test playing byte
@@ -3210,7 +3210,7 @@ replayrout:     movem.l     d0-a6,-(sp)
                 add.l       #YMtemp-.setupym,a1
                 ;       a2 is temp instrument pointer
                 lea         .setupym(pc),a3                 ; lea voicedatapoint(pc),a3
-                add.l       #external_pointers+voicedatapoint-.setupym,a3
+                add.l       #voicedatapoint-.setupym,a3
                 add.l       (a3),a3
                 IFEQ    BUILD_BIN
                 lea         sequencedata-digi0point(a3),a3
@@ -4816,7 +4816,7 @@ stedma_1:       move.b      8+INSTDOFFSET(a4),d1                    ;playing byt
                 subq.b      #1,d0
 
                 lea         .dmastart(pc),a6
-                add.l       #external_pointers+voicedatapoint-.dmastart,a6
+                add.l       #voicedatapoint-.dmastart,a6
                 add.l       (a6),a6
                 move.l      a6,a2
                 lsl.w       #2,d0
@@ -4953,7 +4953,7 @@ stedma_2:       cmpi.b      #2,49(a0)                               ; test stedm
                 subq.b      #1,d0
 
                 lea         .dmastart(pc),a6
-                add.l       #external_pointers+voicedatapoint-.dmastart,a6
+                add.l       #voicedatapoint-.dmastart,a6
                 add.l       (a6),a6
                 move.l      a6,a2
                 lsl.w       #2,d0
@@ -5175,7 +5175,7 @@ gen_patterntab: movem.l     d0/a0-a2,-(sp)                          ; a0 already
                 move.l      a0,a2
                 subq.l      #8,a2
                 lea         gen_patterntab(pc),a1
-                add.l       #external_pointers+trakerdatalen-gen_patterntab,a1
+                add.l       #trakerdatalen-gen_patterntab,a1
                 add.l       (a1),a2                                 ;a2 points to pattern data end
                 ENDC
 
@@ -5185,7 +5185,7 @@ gen_patterntab: movem.l     d0/a0-a2,-(sp)                          ; a0 already
 
                 IFEQ    BUILD_BIN
                 lea         gen_patterntab(pc),a2
-                add.l       #external_pointers+voicedatapoint-gen_patterntab,a2       ; a2 points to voicedata
+                add.l       #voicedatapoint-gen_patterntab,a2       ; a2 points to voicedata
                 add.l       (a2),a2                                 ; a2 points to digi0 pointer
                 move.l      #"EDIT",d0                              ; if the editor is running, there might be an offset to the start of digi0
                 cmp.l       editortag(pc),d0
@@ -5279,7 +5279,7 @@ parsetracker:   lea         parsetracker(pc),a2             ; a2 points to patte
                 subq.w      #1,d1
                 lsl.w       #6,d1                       ;64 bytes per inst
                 lea         .instyesset(pc),a3
-                add.l       #external_pointers+voicedatapoint-.instyesset,a3
+                add.l       #voicedatapoint-.instyesset,a3
                 add.l       (a3),a3
                 lea         56(a3),a3                   ;a3 points to instrument data, skipping names
                 add.l       d1,a3
@@ -7799,14 +7799,9 @@ stopclearend:
 
 ;..................................................................................
 ; pointers to voice and song data used by replay rout
-external_pointers:
-                rsreset
-;voicedatapoint: dc.b        "TRIM"              ; not recalculated on SNDH save
-voicedatapoint: rs.l 1                           ; ggn
-;trakerdatapoint dc.b        "TRIM"              ; recalculated on SNDH save
-trakerdatapoint:rs.l 1                           ; ggn
+voicedatapoint: dc.b        "TRIM"              ; not recalculated on SNDH save
+trakerdatapoint dc.b        "TRIM"              ; recalculated on SNDH save
 
                 IFNE    BUILD_BIN
-;trakerdatalen:  dc.b        "TRIM"              ;only required by pattern pointer calculation
-trakerdatalen:  rs.l  1                          ; ggn
+trakerdatalen:  dc.b        "TRIM"              ;only required by pattern pointer calculation
                 ENDC
