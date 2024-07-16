@@ -3374,7 +3374,7 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 btst        #\1,28+2(a1)                    ;square wave used?
                 bne.s       .endchfreq
 
-                ifeq \1                                     ; avoids assembler warning for zero offser
+                ifeq \1                                     ; avoids assembler warning for zero offset
                 lea.l       (a4),a2
                 else
                 lea.l       \1*128(a4),a2
@@ -3547,7 +3547,7 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 .yessid         ;get YM frequency resister value for timer
                 ;use actual YM value for now
 
-                ifeq \1                                     ; avoids assembler warning for zero offser
+                ifeq \1                                     ; avoids assembler warning for zero offset
                 lea.l       (a4),a2
                 else
                 lea.l       \1*128(a4),a2
@@ -3816,7 +3816,7 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 bne         .endsetuptimer
 
                 ;get YM frequency register value for timer
-                ifeq \1                                     ; avoids assembler warning for zero offser
+                ifeq \1                                     ; avoids assembler warning for zero offset
                 lea.l       (a4),a2
                 else
                 lea.l        \1*128(a4),a2
@@ -3924,7 +3924,7 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 ;................
                 IFNE    FM_\7
 .yesfm          ;get YM frequency register value for timer
-                ifeq \1                                     ; avoids assembler warning for zero offser
+                ifeq \1                                     ; avoids assembler warning for zero offset
                 lea.l       (a4),a2
                 else
                 lea.l        \1*128(a4),a2
