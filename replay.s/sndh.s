@@ -7784,11 +7784,8 @@ stopclearend:
 
 ;..................................................................................
 ; pointers to voice and song data used by replay rout
-voicedatapoint: ;dc.b        "TRIM"              ; not recalculated on SNDH save
-;trakerdatapoint dc.b        "TRIM"              ; recalculated on SNDH save
-trakerdatapoint=voicedatapoint+4
-
+voicedatapoint:                                 ; not recalculated on SNDH save
+trakerdatapoint = voicedatapoint+4              ; recalculated on SNDH save
                 IFNE    BUILD_BIN
-;trakerdatalen:  dc.b        "TRIM"              ;only required by pattern pointer calculation
-trakerdatalen=trakerdatapoint+4
+trakerdatalen   = trakerdatapoint+4             ; only required by pattern pointer calculation
                 ENDC

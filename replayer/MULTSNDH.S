@@ -1,5 +1,5 @@
 ;
-;    Multi sub-tune SNDH example source code 
+;    Multi sub-tune SNDH example source code
 ;
 ;    gwEm 2005, 2006, 2013, 2019, 2020, 2021, 2024
 ;
@@ -26,10 +26,10 @@
                     dc.b    "Not ripped (original track)",0 ;ripper credits - up to you ;)
 
                     dc.b    "CONV"
-                    dc.b    "gwEm",0                        ;converter credits - insert your name here    
+                    dc.b    "gwEm",0                        ;converter credits - insert your name here
 
                     dc.b    "YEAR"
-                    dc.b    "2021",0
+                    dc.b    "2024",0
 
                     dc.b    "##02",0                        ;number of sub-tunes in ASCII
                     dc.b    "TC200",0                       ;replay method - 200Hz allows us to interpolate
@@ -41,7 +41,7 @@
 
                     even
                     dc.b    "HDNS"                          ;SNDH end tag
-        
+
 ;..................................................................................
 ;Multi tune selector
 multituneinit:      movem.l a0/a1,-(sp)                     ;save a0
@@ -50,7 +50,7 @@ multituneinit:      movem.l a0/a1,-(sp)                     ;save a0
                     tst.b   2(a0)                           ;are we playing?
                     beq.s   .continue
                     cmp.w   (a0),d0                         ;compare with current sub-tune
-                    bne.s   .changetune                
+                    bne.s   .changetune
 
                     movem.l (sp)+,a0/a1                     ;current tune already playing so do nothing
                     rts
@@ -115,7 +115,7 @@ multitunedeinit:    move.l  a0,-(sp)                        ;save a0
 multituneinter:     movem.l a0/d0,-(sp)                     ;save reg
                     lea     currenthzcount(pc),a0           ;call replay rout depending on replay frequency
                     move.w  currentreplayhz(pc),d0
-                    sub.w   d0,(a0)                
+                    sub.w   d0,(a0)
                     bgt.s   .no_call
 
 .yes_call:          add.w   #200,(a0)
@@ -148,12 +148,12 @@ songdatalength:     ds.l    1
 one_voice:          incbin  EXAMPLE1.MYV                    ;example music by Dma-Sc
                     even
 one_song:           incbin  EXAMPLE1.MYS
-one_song_end:    
+one_song_end:
                     even
 
 
 two_voice:          incbin  EXAMPLE2.MYV                    ;example music by gwEm
                     even
 two_song:           incbin  EXAMPLE2.MYS
-two_song_end:    
+two_song_end:
                     even

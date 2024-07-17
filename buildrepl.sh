@@ -1,5 +1,4 @@
 unameOut="$(uname -s)"
-set -ex
 
 # detect if "vasm" is in your PATH
 # (http://sun.hasenbraten.de/vasm/index.php?view=relsrc)
@@ -22,13 +21,20 @@ if command -v m68k-atari-tos-devpac-gen >&2; then
     echo crosstos devpac detected
 
     m68k-atari-tos-devpac-gen ./replay.s/stubrepl.s
-    tail -c +29 ./replay.s/stubrepl.PRG > ./replayer/MYM_REPL.BIN
+    tail -c +29 ./replay.s/stubrepl.PRG > ./replay.s/stubrepl.BIN
+    if [ "$unameOut" = "Darwin" ]; then
+        newfsize=$(expr $(stat -f '%z' ./replay.s/stubrepl.BIN) - 4)
+        dd if=./replay.s/stubrepl.BIN of=./replayer/MYM_REPL.BIN bs=1 count=$newfsize
+    else
+        head -c -4 ./replay.s/stubrepl.BIN > ./replayer/MYM_REPL.BIN
+    fi
+    rm -f ./replay.s/stubrepl.BIN ./replay.s/stubrepl.PRG
 
     cd ./replayer/
-    rm ./MULTSNDH.SND
+    rm -f ./MULTSNDH.SND
     m68k-atari-tos-devpac-gen ./MULTSNDH.S
     tail -c +29 MULTSNDH.PRG > MULTSNDH.SND
-    rm MULTSNDH.PRG
+    rm -f MULTSNDH.PRG
     cd ..
     exit 0
 fi
