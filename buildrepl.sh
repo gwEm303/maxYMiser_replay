@@ -5,11 +5,11 @@ unameOut="$(uname -s)"
 if command -v vasm >&2; then
     echo vasm detected
 
-    vasm -no-opt -Fbin -o replayer/MYM_REPL.BIN replay.s/stubrepl.s
+    vasm -no-opt -Fbin -o SOURCE/MYM_REPL.BIN replay.s/stubrepl.s
     # Probably a bug in vasm? The output file "MYM_REPL.PRG" is created instead of "MYM_REPL.BIN"
-    mv replayer/MYM_REPL.PRG replayer/MYM_REPL.BIN
+    mv SOURCE/MYM_REPL.PRG SOURCE/MYM_REPL.BIN
 
-    cd replayer
+    cd SOURCE
     vasm -no-opt -Fbin -o MULTSNDH.SND MULTSNDH.S
     cd ..
     exit 0
@@ -24,13 +24,13 @@ if command -v m68k-atari-tos-devpac-gen >&2; then
     tail -c +29 ./replay.s/stubrepl.PRG > ./replay.s/stubrepl.BIN
     if [ "$unameOut" = "Darwin" ]; then
         newfsize=$(expr $(stat -f '%z' ./replay.s/stubrepl.BIN) - 4)
-        dd if=./replay.s/stubrepl.BIN of=./replayer/MYM_REPL.BIN bs=1 count=$newfsize
+        dd if=./replay.s/stubrepl.BIN of=./SOURCE/MYM_REPL.BIN bs=1 count=$newfsize
     else
-        head -c -4 ./replay.s/stubrepl.BIN > ./replayer/MYM_REPL.BIN
+        head -c -4 ./replay.s/stubrepl.BIN > ./SOURCE/MYM_REPL.BIN
     fi
     rm -f ./replay.s/stubrepl.BIN ./replay.s/stubrepl.PRG
 
-    cd ./replayer/
+    cd ./SOURCE/
     rm -f ./MULTSNDH.SND
     m68k-atari-tos-devpac-gen ./MULTSNDH.S
     tail -c +29 MULTSNDH.PRG > MULTSNDH.SND
