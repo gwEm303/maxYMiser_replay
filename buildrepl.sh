@@ -1,12 +1,43 @@
-/Users/gareth/crosstos/dist/devpac/m68k-atari-tos-devpac-gen ./replay.s/stubrepl.s
-dd if=./replay.s/stubrepl.PRG of=./replay.s/stubrepl.BIN bs=1 skip=28
-newfsize=$(expr $(stat -f '%z' ./replay.s/stubrepl.BIN) - 16)
-dd if=./replay.s/stubrepl.BIN of=./replay.s/MYM_REPL.BIN bs=1 count=$newfsize
-rm ./replay.s/stubrepl.BIN ./replay.s/stubrepl.PRG
-mv ./replay.s/MYM_REPL.BIN ./replayer/
+unameOut="$(uname -s)"
 
-cd ./replayer/
-rm ./MULTSNDH.SND
-/Users/gareth/crosstos/dist/devpac/m68k-atari-tos-devpac-gen ./MULTSNDH.S
-dd if=MULTSNDH.PRG of=MULTSNDH.SND bs=1 skip=28
-rm MULTSNDH.PRG
+# detect if "vasm" is in your PATH
+# (http://sun.hasenbraten.de/vasm/index.php?view=relsrc)
+if command -v vasm >&2; then
+    echo vasm detected
+
+    vasm -no-opt -Fbin -o replayer/MYM_REPL.BIN replay.s/stubrepl.s
+    # Probably a bug in vasm? The output file "MYM_REPL.PRG" is created instead of "MYM_REPL.BIN"
+    mv replayer/MYM_REPL.PRG replayer/MYM_REPL.BIN
+
+    cd replayer
+    vasm -no-opt -Fbin -o MULTSNDH.SND MULTSNDH.S
+    cd ..
+    exit 0
+fi
+
+# detect if crosstos/dist/devpac is in your PATH
+# (https://bitbucket.org/pep-entral/crosstos/src/master/)
+if command -v m68k-atari-tos-devpac-gen >&2; then
+    echo crosstos devpac detected
+
+    m68k-atari-tos-devpac-gen ./replay.s/stubrepl.s
+    tail -c +29 ./replay.s/stubrepl.PRG > ./replay.s/stubrepl.BIN
+    if [ "$unameOut" = "Darwin" ]; then
+        newfsize=$(expr $(stat -f '%z' ./replay.s/stubrepl.BIN) - 4)
+        dd if=./replay.s/stubrepl.BIN of=./replayer/MYM_REPL.BIN bs=1 count=$newfsize
+    else
+        head -c -4 ./replay.s/stubrepl.BIN > ./replayer/MYM_REPL.BIN
+    fi
+    rm -f ./replay.s/stubrepl.BIN ./replay.s/stubrepl.PRG
+
+    cd ./replayer/
+    rm -f ./MULTSNDH.SND
+    m68k-atari-tos-devpac-gen ./MULTSNDH.S
+    tail -c +29 MULTSNDH.PRG > MULTSNDH.SND
+    rm -f MULTSNDH.PRG
+    cd ..
+    exit 0
+fi
+
+echo no supported assembler on path
+exit 1
