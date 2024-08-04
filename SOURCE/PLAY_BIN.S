@@ -44,26 +44,26 @@ top:    move.l  4(sp),a5                ; address to basepage
 
         bsr     MUSIC+0                 ; init music
 
-        move.w  #7,-(sp)                ; wait for a key
+.loop   move.w  #7,-(sp)                ; wait for a key
         trap    #1                      ;
         addq.l  #2,sp                   ;
+        cmpi.b  #$20,d0                 ; space quits
+        beq.s   .end                    ;
 
 ;        moveq   #80,d0                  ; global volume
 ;        bsr     MUSIC+12                ;
 
-;        moveq   #100,d0                 ; note
-;        moveq   #0,d1                   ; instrument
-;        moveq   #2,d2                   ; channel
-;        bsr     MUSIC+16                ; manual play note
+        moveq   #100,d0                 ; note
+        moveq   #1,d1                   ; instrument
+        moveq   #2,d2                   ; channel
+        bsr     MUSIC+16                ; manual play note
 
-        moveq   #3,d0                   ; next song position
-        bsr     MUSIC+20                ;
+;        moveq   #3,d0                   ; next song position
+;        bsr     MUSIC+20                ;
 
-        move.w  #7,-(sp)                ; wait for a key
-        trap    #1                      ;
-        addq.l  #2,sp                   ;
+        bra.s   .loop
 
-        bsr     MUSIC+4                 ; de-init music
+.end    bsr     MUSIC+4                 ; de-init music
 
         move.b  oldcon(pc),$484.w       ; restore key click
         move.l  oldtc,$114.w            ; restore timer C

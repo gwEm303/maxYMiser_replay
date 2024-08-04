@@ -6,8 +6,6 @@
 ;..................................................................................
                 IFNE    BUILD_BIN
 HALF_MEG        equ         0
-;SEQ_LENGTH      equ         31+1                    ; 31 word steps + byte length + byte repeat
-;SEQ_LEN_LOG2    equ         5
 SEQ_LENGTH      equ         63+1                    ; 63 word steps + byte length + byte repeat
 SEQ_LEN_LOG2    equ         6
                 ENDC
@@ -227,6 +225,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 beq.s     .setE
                 bra       .end
 
+                ; v YM v
 .setA           add.l     #instrumentA-manualplaynote,a1
                 bsr       setuptimerA            ;assume a0 points to tracker data
                 bra       .cont
@@ -236,6 +235,7 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
 .setC           add.l     #instrumentC-manualplaynote,a1
                 bsr       setuptimerD            ;assume a0 points to tracker data
                 bra.s     .cont
+                ; v DMA v
 .setD           add.l     #instrumentD-manualplaynote,a1
                 cmpi.b    #4,49(a0)
                 beq.s     .setDnote
@@ -286,11 +286,11 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 add.l     #voicedatapoint-.cont,a6
                 add.l     (a6),a6                ; a6 is digi0point
                 lea       40+16(a6),a6           ; +40 takes us to instrumentdata +16 takes us to portamento flag
-                add.l     d1,a6                  ; a0 points to end of inst
+                add.l     d1,a6                  ; a6 points to instrument in tracker data
 
                 movem.l   (a6),d0-d7/a2-a5
                 movem.l   d0-d7/a2-a5,(a1)       ; write instrument to buffer (12 longs)
-
+                move.b    61(a1),d7              ; d7.b contains RLE counter
                 lea       4*12(a1),a1
 
                 moveq     #0,d0
@@ -300,11 +300,12 @@ manualplaynote: movem.l   d0-d7/a0-a6,-(sp)                   ;d0.b=note d1.b=in
                 moveq     #0,d4
                 moveq     #0,d5
                 moveq     #0,d6
-                moveq     #0,d7
                 move.l    d0,a2
                 move.l    d0,a3
                 move.l    d0,a4
-                movem.l   d0-d7/a2-a4,(a1)       ; clear instrument specific data (11 longs)
+                move.l    d0,a5
+                movem.l   d0-d6/a2-a5,(a1)       ; clear instrument specific data (11 longs)
+                move.b    d7,61-(4*12)(a1)       ; restore RLE counter
 
                 move.b    58(a0),d0              ; editor volume
                 beq.s     .end                   ; if editor volume not set
