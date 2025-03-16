@@ -27,14 +27,15 @@ instrumentdata: ;ds.b   16          ;+00-15 name                16 = 15 chars + 
 
                 ;ds.b   1           ;+32    Sequence Speed
                 ;ds.b   1           ;+33    Pulse width
-                ;ds.b   1           ;+34    Buzzer wave         $0->$F
+                ;ds.b   1           ;+34    Buzzer wave           $0->$F
                 ;ds.b   1           ;+35    Buzzer startsync
                 ;ds.b   1           ;+36    Digi sample
-                ;ds.b   1           ;+37    Digi rate           default = $20
-                ;ds.b   1           ;+38    Instr Vol           default = $0->F
+                ;ds.b   1           ;+37    Digi rate             default = $20
+                ;ds.b   1           ;+38    Instr Vol             default = $0->F
                 ;ds.b   1           ;+39    Fixed detune coarse
                 ;ds.b   1           ;+40    Fixed detune fine
-                ;ds.b   1           ;+41-47 reserved
+                ;ds.b   1           ;+41    Frequency resolution  default = 0 = full resolution, 1 = buzzer resolution
+                ;ds.b   1           ;+42-47 reserved
 
                 ;ds.b   1           ;+48    Volume sequence
                 ;ds.b   1           ;+49    Arppegio sequence

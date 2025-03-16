@@ -132,11 +132,11 @@ songname:       ds.b        27                      ;26 letters, 1 NULL
 
                 dc.b        "CONV"
 converterstring dc.b        "maxYMiser by Gareth Morris (c) 20"
-converterstrend dc.b        "24",0                  ;desensitise to year digits.... assume i won't be doing an update in 2100 ;)
+converterstrend dc.b        "25",0                  ;desensitise to year digits.... assume i won't be doing an update in 2100 ;)
                 even
 
                 dc.b        "YEAR"
-sndhyearstring: dc.b        "2024",0
+sndhyearstring: dc.b        "2025",0
                 even
 
                 dc.b        "##01",0                ;single tune
@@ -154,7 +154,7 @@ demozyncroniser ds.b        1                       ; +$18 (binary replayer)
                 even
 
 ;..................................................................................
-                dc.b        " -*- maxYMiser replay routine by gwEm/PHF (Gareth Morris) (c) 2024 -*- "
+                dc.b        " -*- maxYMiser replay routine by gwEm/PHF (Gareth Morris) (c) 2025 -*- "
                 dc.b        0
                 incbin      replay.s/aboutv.txt
                 dc.b        0
@@ -709,10 +709,10 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         timlengthA_020(pc),a2
                 moveq       #SYNSQU_STEPS-1,d0
 .ssAtop020      move.l      a1,(a0)+
-                sub.w       d1,32+2(a1)                         ;account for later shifting of SMC routines
-                sub.w       d1,32+8(a1)                         ;account for later shifting of SMC routines
-                move.l      a2,32+16(a1)                        ;relocation
-                lea.l       32+38(a1),a1
+                sub.w       d1,30+2(a1)                         ;account for later shifting of SMC routines
+                sub.w       d1,30+8(a1)                         ;account for later shifting of SMC routines
+                move.l      a2,30+16(a1)                        ;relocation
+                lea.l       30+38(a1),a1
                 move.l      #$00000000,12(a3)
                 move.l      #$0000DEAD,22(a3)
                 move.l      #$0100DEAD,30(a3)
@@ -734,10 +734,10 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 lea         timlengthB_020(pc),a2
                 moveq       #SYNSQU_STEPS-1,d0
 .ssBtop020      move.l      a1,(a0)+
-                sub.w       d1,32+2(a1)                         ;account for later shifting of SMC routines
-                sub.w       d1,32+8(a1)                         ;account for later shifting of SMC routines
-                move.l      a2,32+16(a1)                        ;relocation
-                lea.l       32+38(a1),a1
+                sub.w       d1,30+2(a1)                         ;account for later shifting of SMC routines
+                sub.w       d1,30+8(a1)                         ;account for later shifting of SMC routines
+                move.l      a2,30+16(a1)                        ;relocation
+                lea.l       30+38(a1),a1
                 move.l      #$02000000,12(a3)
                 move.l      #$0200DEAD,22(a3)
                 move.l      #$0300DEAD,30(a3)
@@ -763,10 +763,10 @@ cpu_dep_reloc:  movem.l     d0-d1/a0-a3,-(sp)                   ;machine dependa
                 add.l       #timlengthD_020-.ssDtop020,a2
                 moveq       #SYNSQU_STEPS-1,d0
 .ssDtop020      move.l      a1,(a0)+
-                sub.w       d1,32+2(a1)                         ;account for later shifting of SMC routines
-                sub.w       d1,32+8(a1)                         ;account for later shifting of SMC routines
-                move.l      a2,32+16(a1)                        ;relocation
-                lea.l       32+38(a1),a1
+                sub.w       d1,30+2(a1)                         ;account for later shifting of SMC routines
+                sub.w       d1,30+8(a1)                         ;account for later shifting of SMC routines
+                move.l      a2,30+16(a1)                        ;relocation
+                lea.l       30+38(a1),a1
                 move.l      #$04000000,12(a3)
                 move.l      #$0400DEAD,22(a3)
                 move.l      #$0500DEAD,30(a3)
@@ -3600,6 +3600,10 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 move.w      sr,d2
                 move.w      #$2700,sr                       ;kill interrupts
 
+                IFNE    INCLUDE_020
+                lea         timlength\7_020(pc),a2
+                move.b      d5,(a2)
+                ENDC
 
                 move.b      2+32+\1*4(a1),d1
                 cmp.b       \1*128+123(a4),d1               ;compare current against old ym vols
@@ -3609,11 +3613,6 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
 
 .yesSIDmodvol   move.b      d1,\1*128+123(a4)               ;old YM vol
                 move.b      d6,\1*128+124(a4)               ;old sid timer seq
-
-                IFNE    INCLUDE_020
-                lea         timlength\7_020(pc),a2
-                move.b      d5,(a2)
-                ENDC
 
                 lea         sidinters\7_SMC(pc),a2
                 move.l      a2,d4
@@ -3778,9 +3777,9 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 tst.b       \1*128+50(a4)                   ; have we synced?
                 beq.s       .forcesycSYSQ
 
-.noSYSQsync     cmpi.b      #$F,(a2)
+.noSYSQsync     cmpi.b      #$1,(a2)
                 beq.s       .endSYSQ
-                move.b      #$F,(a2)
+                move.b      #$1,(a2)
                 move.l      synsqinterupt\7(pc),\4          ;setup sync square
 
                 lea         synsqint\7_SMC(pc),a5
@@ -3791,7 +3790,7 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 move.l      30(a5),$ffff8800.w
                 bra.s       .endSYSQ
 
-.forcesycSYSQ   move.b      #$F,(a2)
+.forcesycSYSQ   move.b      #$1,(a2)
                 move.l      synsqinterupt\7(pc),\4          ;setup interrupt
                 lea         synsqint\7_SMC(pc),a5
                 move.l      a5,d4
@@ -4422,13 +4421,13 @@ setupYMchan_MAC macro       ymchan,maskbit,maskreg,intvector,divider,data,timerl
                 move.w      sr,d2
                 move.w      #$2700,sr                       ;kill interrupts
 
-                moveq       #0,d1
-                move.b      2+32+\1*4(a1),d1                ;YM vol
-
                 IFNE    INCLUDE_020
                 lea         timlength\7_020(pc),a2
                 move.b      #2,(a2)
                 ENDC
+
+                moveq       #0,d1
+                move.b      2+32+\1*4(a1),d1                ;YM vol
 
                 lea         pwminter\7_SMC1(pc),a2
                 move.l      a2,d4
@@ -6311,7 +6310,9 @@ getsqufreq:     moveq       #0,d3
 
 .nochfix        btst        #2,5(a2)                        ;fixed detune flag
                 beq.s       .nofixeddetc
-                move.b      23(a2),d3                       ;include fixed detune
+                tst.b       41-16(a2)                       ;check frequency resolution
+                bne.s       .nofixeddetc                    ;frequency resolution is buzzer, deal with coarse tune later
+                move.b      23(a2),d3                       ;include fixed detune coarse
                 ext.w       d3
 .nofixeddetc
 
@@ -6336,10 +6337,31 @@ getsqufreq:     moveq       #0,d3
                 move.b      127(a2),d2
                 add.w       d2,d3                           ;add note number
                 add.w       d3,d3                           ;words
-                move.w      squa_freq_tab(pc,d3.w),d3
 
+                tst.b       41-16(a2)                       ;check frequency resolution
+                beq.s       .noquantise
 
-                btst        #2,(a2)                         ;test portamento flag
+                lea         buzz_freq_tab(pc),a5
+                move.w      (a5,d3.w),d3
+                lsl.w       #4,d3
+                btst        #2,5(a2)                        ;fixed detune flag, we deal with this differently when quantisation is on
+                beq.s       .portamento
+                move.b      23(a2),d0                       ;fixed detune coarse
+                beq.s       .portamento
+                neg.b       d0                              ;allows us to use mulu instead of divu
+                ext.w       d0
+                addi.w      #36,d0                          ;go 3 octaves up, gain precision, allows table to work up and down
+                lea         porta_tune_tab(pc),a5
+                add.w       d0,d0
+                move.w      (a5,d0.w),d0                    ;a5 is porta tune table
+                mulu        d0,d3
+                asr.l       #8,d3                           ;*256 - compensation for table (*32 and then 3 octave adjustment)
+                bra.s       .portamento
+
+.noquantise     lea         squa_freq_tab(pc),a5
+                move.w      (a5,d3.w),d3
+
+.portamento     btst        #2,(a2)                         ;test portamento flag
                 beq.s       .noporta
                 moveq       #0,d2
                 move.w      54(a2),d2                       ;portamento accumulator
@@ -6420,7 +6442,9 @@ gettimfreq:     moveq       #0,d3
 
 .nochfix        btst        #0,5(a2)                                ;fixed detune flag
                 beq.s       .nofixeddetc
-                move.b      23(a2),d3                               ;include fixed detune
+                tst.b       41-16(a2)                               ;check frequency resolution
+                bne.s       .nofixeddetc                            ;frequency resolution is buzzer, deal with coarse tune later
+                move.b      23(a2),d3                               ;include fixed detune coarse
                 ext.w       d3
 .nofixeddetc
 
@@ -6445,10 +6469,31 @@ gettimfreq:     moveq       #0,d3
                 move.b      127(a2),d2
                 add.w       d2,d3                                   ;add note number
                 add.w       d3,d3                                   ;words
-                lea         squa_freq_tab(pc),a5
+
+                tst.b       41-16(a2)                               ;check frequency resolution
+                beq.s       .noquantise
+
+                lea         buzz_freq_tab(pc),a5
+                move.w      (a5,d3.w),d3
+                lsl.w       #4,d3
+                btst        #0,5(a2)                                ;fixed detune flag, we deal with this differently when quantisation is on
+                beq.s       .portamento
+                move.b      23(a2),d0                               ;fixed detune coarse
+                beq.s       .portamento
+                neg.b       d0                                      ;allows us to use mulu instead of divu
+                ext.w       d0
+                addi.w      #36,d0                                  ;go 3 octaves up, gain precision, allows table to work up and down
+                lea         porta_tune_tab(pc),a5
+                add.w       d0,d0
+                move.w      (a5,d0.w),d0                            ;a5 is porta tune table
+                mulu        d0,d3
+                asr.l       #8,d3                                   ;*256 - compensation for table (*32 and then 3 octave adjustment)
+                bra.s       .portamento
+
+.noquantise     lea         squa_freq_tab(pc),a5
                 move.w      (a5,d3.w),d3
 
-                btst        #0,(a2)                                 ;test portamento flag
+.portamento     btst        #0,(a2)                                 ;test portamento flag
                 beq.s       .noporta
                 moveq       #0,d2
                 move.w      54(a2),d2                               ;portamento accumulator
